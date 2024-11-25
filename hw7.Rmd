@@ -1,0 +1,95 @@
+---
+title: "hw7"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+Load necessary R packages and the Associated Press dataset
+```{r}
+library(topicmodels)
+library(tm)
+library(SnowballC)
+library(tidytext)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(tibble)
+
+data("AssociatedPress")
+AssociatedPress
+```
+
+Perform stemming on the terms in the AssociatedPress dataset
+```{r}
+terms = Terms(AssociatedPress)
+stemmed_terms = wordStem(terms, language = "english")
+
+dimnames(AssociatedPress)$Terms = stemmed_terms
+```
+
+Apply Latent Dirichlet Allocation (LDA) model to the AssociatedPress dataset
+```{r}
+ap_lda <- LDA(AssociatedPress, k = 12, control = list(seed = 1234))
+```
+
+Extract posterior probabilities from the LDA model
+```{r}
+ap_lda <- posterior(ap_lda, newdata = AssociatedPress)$terms %>%
+  as.data.frame(stringsAsFactors = FALSE) %>% 
+  t() %>% 
+  as.data.frame(stringsAsFactors = FALSE)
+
+colnames(ap_lda) <- paste("topic", 1:ncol(ap_lda))
+
+ap_topics <- ap_lda %>%
+  rownames_to_column("term") %>%
+  pivot_longer(cols = starts_with("topic"), 
+               names_to = "topic", 
+               values_to = "distinctivity")
+ap_topics
+```
+
+Plot the top 10 distinct terms for each topic
+```{r}
+ap_top_terms <- ap_topics %>%
+  group_by(topic) %>%
+  slice_max(distinctivity, n = 10) %>%
+  ungroup() %>%
+  arrange(topic, -distinctivity)
+
+ap_top_terms %>%
+  mutate(term = reorder_within(term, distinctivity, topic)) %>%
+  ggplot(aes(distinctivity, term, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  scale_y_reordered()
+```
+
+Summary: 
+
+Topic 1 is likely focused on financial markets and economic indicators, discussing stock prices, market trends, and financial terms such as billion, million, dollar, percent changes, and new developments.
+
+Topic 2 seems to center around legislative activities, likely in the United States, involving the passing of bills, budget considerations, trade discussions, and perhaps the involvement of President Bush, indicating a specific historical timeframe.
+
+Topic 3 appears to discuss geopolitical matters, particularly relating to the Middle East, with references to Iraq, Kuwait, Saudi Arabia, and issues like war, oil, and state affairs.
+
+Topic 4 seems to be related to security and military operations, with words indicating law enforcement, military engagement, and possibly conflict or violence.
+
+Topic 5 might pertain to political dynamics, discussing government parties, presidential matters, national issues, and perhaps focusing on South Africa or southern regions in a broader context.
+
+Topic 6 appears to deal with domestic issues or public safety, including police matters, incidents involving individuals (possibly of varying ages), state-level concerns, and hospital or health-related topics.
+
+Topic 7 is centered on business and corporate matters, including company news, financial figures such as million and billion, corporate strategies, and leadership.
+
+Topic 8 focuses on political campaigns, likely in the U.S., referencing figures such as Bush, Dukakis, and Jackson, and involving the Republican and Democratic parties, suggesting an election context.
+
+Topic 9 seems to be about air travel or aviation, with references to news about flights, alignment (possibly referring to airline alliances or routes), and mentions of a president, which could be related to aviation policies or incidents.
+
+Topic 10 covers topics related to the Cold War era, with terms related to the Soviet Union, East and West Germany, and possibly the policies or actions of President Gorbachev.
+
+Topic 11 deals with legal proceedings and law enforcement, discussing federal courts, legal cases, the roles of attorneys and judges, state laws, and possibly drug-related charges.
+
+Topic 12 appears to relate to temporal events or societal trends, with a focus on new developments, work, time management, and perhaps reflecting on the past year or looking forward to the next.

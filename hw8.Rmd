@@ -1,0 +1,213 @@
+---
+title: "Homework 8"
+output:
+  html_document:
+    df_print: paged
+---
+
+### Several goodness of fit statistics of these two models are plotted.
+```{r}
+library("amen")
+library("network")
+```
+
+```{r}
+data(lazegalaw)
+Y<-lazegalaw$Y[,,2]
+Xd<-lazegalaw$Y[,,-2]
+Xn<-lazegalaw$X
+dimnames(Xd)[[3]]
+
+```
+```{r}
+dimnames(Xn)[[2]]
+```
+```{r}
+netplot(lazegalaw$Y[,,2],ncol=Xn[,3])
+```
+Analysis Steps
+Data Preparation: Load the dataset, ensuring that the dyadic variables (in this case, binary indicators of friendship) are correctly formatted. This would typically involve a matrix or edge list representing ties between members (nodes) of the law firm.
+
+Network Construction: Construct a graph where each node represents a lawyer and each edge represents a friendship tie. Nodes would be colored based on the office each lawyer works in.
+
+Descriptive Analysis:
+
+Calculate basic network statistics such as density, degree distribution, and number of components.
+Determine the centralities (e.g., betweenness, closeness, eigenvector) to identify influential individuals.
+Examine the clustering coefficient to assess the tendency of forming clusters or triads in the network.
+Community Detection: Identify communities or clusters within the network which might correspond to departments, practice groups, or offices.
+
+Nodal Characteristics Analysis: Examine the relationship between individual lawyers' attributes (nodal characteristics) and their network position. For instance, analyze if senior lawyers have more connections or if certain offices are more central in the network.
+
+Visual Representation: Create visualizations like the one you've uploaded to aid in interpretation, where the node color represents the office of each lawyer.
+
+
+Assumptions
+Binary Relationships: We assume that the friendship ties are binary and undirected, meaning that if lawyer A is friends with lawyer B, this implies that B is also friends with A (mutuality).
+
+Nodal Attributes: The nodal characteristics (e.g., office location, years at the firm, practice area) are accurately reported and relevant to the analysis.
+
+Independent Dyads: The friendship connections between each pair of lawyers (dyads) are assumed to be independent of other dyads, although in reality, friendships in social networks are often interdependent.
+
+No Missing Data: We assume there is no missing data, meaning that all relevant ties and characteristics are captured in the dataset.
+
+
+Interpretation
+Findings from Descriptive Analysis: We might find that the network is highly centralized around a few key individuals or that there is a high degree of clustering within certain offices.
+
+Community Structure: If clear communities are detected, it could indicate that lawyers within the same office or practice group interact more frequently with each other.
+
+Nodal Characteristics: If senior lawyers or those from a particular office are more central, it might suggest hierarchical or geographical influences on the social structure of the firm.
+
+Implications: The findings can have practical implications for knowledge sharing, collaboration efficiency, and the overall social structure within the firm. It might also impact decisions on organizational changes or office arrangements.
+```{r}
+fit_SRM<-ame(Y,family="bin")
+```
+
+```{r}
+fit_SRG<-ame(Y,family="bin",rvar=FALSE,cvar=FALSE,dcor=FALSE)
+```
+
+```{r}
+par(mfrow=c(2, 2))
+# Plot sd.rowmean for fit_SRM and fit_SRG
+hist(fit_SRM$GOF[,1], breaks=seq(from = 0.06, to = 0.12, by = 0.005), 
+     col=rgb(0.5,0.5,1,0.5), xlim=range(c(fit_SRM$GOF[,1], fit_SRG$GOF[,1])), main="", xlab="sd.rowmean")
+hist(fit_SRG$GOF[,1], breaks=seq(from = 0.03, to = 0.11, by = 0.002),
+     col=rgb(0.5,1,0.5,0.5), add=TRUE)
+abline(v = gofstats(Y)[1], col = "red", lwd = 2)
+
+# Plot sd.colmean for fit_SRM and fit_SRG
+hist(fit_SRM$GOF[,2], breaks=seq(from = 0.05, to = 0.13, by = 0.005),
+     col=rgb(0.5,0.5,1,0.5), xlim=range(c(fit_SRM$GOF[,2], fit_SRG$GOF[,2])), main="", xlab="sd.colmean")
+hist(fit_SRG$GOF[,2], breaks=seq(from = 0.01, to = 0.10, by = 0.002), 
+     col=rgb(0.5,1,0.5,0.5), add=TRUE)
+abline(v = gofstats(Y)[2], col = "red", lwd = 2)
+
+# Plot dyad.dep for fit_SRM and fit_SRG
+hist(fit_SRM$GOF[,3], breaks=seq(from = -0.05, to = 0.25, by = 0.02),
+     col=rgb(0.5,0.5,1,0.5), xlim=range(c(fit_SRM$GOF[,3], fit_SRG$GOF[,3])), main="", xlab="dyad.dep")
+hist(fit_SRG$GOF[,3], breaks=seq(from = -0.06, to = 0.16, by = 0.01), 
+     col=rgb(0.5,1,0.5,0.5), add=TRUE)
+abline(v = gofstats(Y)[3], col = "red", lwd = 2)
+
+# Plot cycle.dep for fit_SRM and fit_SRG
+hist(fit_SRM$GOF[,4], breaks=seq(from = -0.02, to = 0.025, by = 0.002), 
+     col=rgb(0.5,0.5,1,0.5), xlim=range(c(fit_SRM$GOF[,4], fit_SRG$GOF[,4])), main="", xlab="cycle.dep")
+hist(fit_SRG$GOF[,4], breaks=seq(from = -0.02, to = 0.025, by = 0.002), 
+     col=rgb(0.5,1,0.5,0.5), add=TRUE)
+abline(v = gofstats(Y)[4], col = "red", lwd = 2)
+
+```
+Image Interpretation
+Assuming the histograms represent the goodness of fit statistics:
+
+Histograms: Each histogram likely represents the distribution of one of the four goodness of fit statistics for the SRM (blue) and SRG (green) models. The x-axis represents the value of the statistic, and the y-axis represents the frequency of that value occurring across simulations or bootstrapped samples.
+
+sd.rowmean and sd.colmean: These histograms show the standard deviations of the row and column means, reflecting row and column heterogeneity in terms of outdegrees and indegrees, respectively.
+
+dyad.dep: Represents dyadic dependence, which measures the extent to which the presence of a tie between two nodes depends on the individual characteristics of those nodes.
+
+cycle.dep: Indicates cyclic dependencies, which are a form of third-order dependencies involving cycles among three or more nodes.
+
+The vertical red lines in the histograms likely indicate the observed statistic value in the actual network data. The goodness of fit is assessed by comparing the location of the red line to the distribution of the simulated statistic. A good fit would be indicated by the red line falling within the bulk of the histogram, signifying that the observed statistic is a common outcome under the model. The text suggests that while the SRM model fits well for the second-order dependencies (row and column heterogeneity, dyadic dependence), both models fail to account for third-order dependencies (cyclic dependencies).
+
+Based on the text, the SRM seems to outperform the SRG model significantly in capturing the network's second-order dependencies, but both models lack in representing more complex relationships like triadic closures. This information is crucial for understanding the network structure and could inform further model development to better capture the complexities of the actual network interactions.
+
+```{r}
+Xno<-Xn[,c(1,2,4,5,6)]
+fit_SRRM<-ame(Y, Xd=Xd, Xr=Xno, Xc=Xno, family="bin")
+```
+```{r}
+summary(fit_SRRM)
+```
+```{r}
+outdegrees <- rowSums(Y, na.rm = TRUE)
+indegrees <- colSums(Y, na.rm = TRUE)
+
+row_effects <- fit_SRM$APM
+col_effects <- fit_SRM$BPM
+
+
+par(mfrow = c(1, 2))
+plot(outdegrees, row_effects, 
+     xlab = "outdegree", ylab = "additive row effects")
+plot(indegrees, col_effects, 
+     xlab = "indegree", ylab = "additive row effects")
+```
+Interpretation of the Scatter Plots
+
+
+Left Plot (Outdegree): Shows the relationship between the outdegree of nodes and the estimated additive row effects. The outdegree of a node refers to the number of ties that a node directs to others, which in a social network context can be considered the number of connections or friendships a person initiates.
+Right Plot (Indegree): Displays the relationship between the indegree of nodes and the estimated additive column effects. The indegree represents the number of ties directed towards the node from others, indicating the popularity or the number of connections or friendships received.
+
+
+Observations
+Positive Association: Both plots seem to show a positive linear association, which suggests that nodes with higher outdegrees tend to have higher additive row effects, and nodes with higher indegrees tend to have higher additive column effects.
+Interpretation of Effects: The additive row effects may capture the propensity of nodes to form outbound ties, influenced by their characteristics or attributes. Conversely, the additive column effects could represent the attractiveness or the likelihood of nodes to receive ties, again influenced by their characteristics.
+Not Strictly Monotonic: Although the relationship is positive, it's noted that it's not strictly monotonic, implying that other factors (like the attributes of the nodes to which they are connected) may influence the relationship.
+```{r}
+fit_AME<-ame(Y, Xd=Xd[,,2], R=3, family="bin")
+```
+The fit checks for the rank-3 AME model indicate that after removing the non-significant linear terms, the model may still struggle with capturing transitive dependencies, as indicated by the trans.dep histogram. The incorporation of rank-3 multiplicative effects is an attempt to better account for complex dependencies and interactions in the network that are not captured by simpler additive models. The histograms and trace plots would be used to assess how well this more complex model conforms to the observed network data, which is crucial for understanding underlying social structures and dynamics.
+```{r}
+U<-fit_AME$U
+V<-fit_AME$V
+
+round(cor(U, Xno),2)
+```
+
+```{r}
+round(cor(V, Xno),2)
+```
+```{r}
+library(ggplot2)
+library(gridExtra)
+
+
+nodes_df <- data.frame(
+  status = factor(Xn[,"status"]),
+  office = factor(Xn[,"office"])
+)
+
+levels(nodes_df$status) <- c("partner", "associate")
+levels(nodes_df$office) <- c("Boston", "Hartford", "Providence")
+
+color_map <- c("Boston" = "green", "Hartford" = "blue", "Providence" = "lightblue")
+shape_map <- c("partner" = 21, "associate" = 19)
+
+p <- ggplot() + 
+  theme_bw() + 
+  theme(panel.spacing = unit(2, "lines")) 
+
+plots <- list(
+  ggplot(nodes_df, aes(x=U[,1], y=V[,1], color=office, shape=status)) + 
+    geom_point() + 
+    xlab(expression(u[1])) + 
+    ylab(expression(v[1])) +
+    scale_color_manual(values = color_map) +
+    scale_shape_manual(values = shape_map),
+  ggplot(nodes_df, aes(x=U[,2], y=V[,2], color=office, shape=status)) + 
+    geom_point() + 
+    xlab(expression(u[2])) + 
+    ylab(expression(v[2])) +
+    scale_color_manual(values = color_map) +
+    scale_shape_manual(values = shape_map),
+  ggplot(nodes_df, aes(x=U[,3], y=V[,3], color=office, shape=status)) + 
+    geom_point() + 
+    xlab(expression(u[3])) + 
+    ylab(expression(v[3])) +
+    scale_color_manual(values = color_map) +
+    scale_shape_manual(values = shape_map)
+)
+
+do.call(grid.arrange, c(plots, nrow = 2, ncol=2))
+```
+Findings
+Role of Nodal Characteristics: The scatter plots indicated that 'status' and 'office' do play a role in the formation of the network. These characteristics were correlated with the latent factors, suggesting that they influence how individuals are positioned in the latent social space and thus how they form relationships.
+Multiplicative Interactions: The nodal characteristics were found to interact in a multiplicative manner, indicating that the influence of one attribute on network ties is amplified or diminished by the presence of other attributes.
+Visualization of Latent Structure: The plots provided a visual representation of the latent social space, with individuals' statuses and office locations suggesting clustering patterns that reflect underlying social dynamics.
+Insufficiency of Additive Models: The analysis highlighted that additive models might be insufficient to capture the complexity of network formation, necessitating models that can handle multiplicative interactions, like the rank-3 AME model used in this case.
+
+Conclusion
+The rank-3 AME model's ability to incorporate multiplicative interactions between nodal characteristics provided a nuanced understanding of the law firm's social network. The findings suggest that factors such as professional status and geographical office location are significant in shaping the network structure, not just individually but also through their interactions with one another. These insights could be valuable for the law firm to understand and leverage the social dynamics at play, potentially informing organizational decisions, collaboration strategies, and internal networking opportunities.
